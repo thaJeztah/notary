@@ -105,7 +105,8 @@ func ValidateRoot(prevRoot *data.SignedRoot, root *data.Signed, gun string, trus
 	}
 
 	// If we have a previous root, let's try to use it to validate that this new root is valid.
-	if prevRoot != nil {
+	havePrevRoot := prevRoot != nil
+	if havePrevRoot {
 		// Retrieve all the trusted certificates from our previous root
 		// Note that we do not validate expiries here since our originally trusted root might have expired certs
 		allTrustedLeafCerts, allTrustedIntCerts := parseAllCerts(prevRoot)
@@ -128,25 +129,26 @@ func ValidateRoot(prevRoot *data.SignedRoot, root *data.Signed, gun string, trus
 			logrus.Debugf("failed to verify TUF data for: %s, %v", gun, err)
 			return nil, &ErrRootRotationFail{Reason: "failed to validate data with current trusted certificates"}
 		}
-	} else {
-		logrus.Debugf("found no currently valid root certificates for %s, using trust_pinning config to bootstrap trust", gun)
-		trustPinCheckFunc, err := NewTrustPinChecker(trustPinning, gun)
-		if err != nil {
-			return nil, &ErrValidationFail{Reason: err.Error()}
-		}
-
-		validPinnedCerts := map[string]*x509.Certificate{}
-		for id, cert := range certsFromRoot {
-			if ok := trustPinCheckFunc(cert, allIntCerts[id]); !ok {
-				continue
-			}
-			validPinnedCerts[id] = cert
-		}
-		if len(validPinnedCerts) == 0 {
-			return nil, &ErrValidationFail{Reason: "unable to match any certificates to trust_pinning config"}
-		}
-		certsFromRoot = validPinnedCerts
 	}
+
+	// Regardless of having a previous root or not, confirm that the new root validates against the trust pinning
+	logrus.Debugf("checking root against trust_pinning config", gun)
+	trustPinCheckFunc, err := NewTrustPinChecker(trustPinning, gun, !havePrevRoot)
+	if err != nil {
+		return nil, &ErrValidationFail{Reason: err.Error()}
+	}
+
+	validPinnedCerts := map[string]*x509.Certificate{}
+	for id, cert := range certsFromRoot {
+		if ok := trustPinCheckFunc(cert, allIntCerts[id]); !ok {
+			continue
+		}
+		validPinnedCerts[id] = cert
+	}
+	if len(validPinnedCerts) == 0 {
+		return nil, &ErrValidationFail{Reason: "unable to match any certificates to trust_pinning config"}
+	}
+	certsFromRoot = validPinnedCerts
 
 	// Validate the integrity of the new root (does it have valid signatures)
 	// Note that certsFromRoot is guaranteed to be unchanged only if we had prior cert data for this GUN or enabled TOFUS
