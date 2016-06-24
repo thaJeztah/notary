@@ -233,6 +233,10 @@ func ValidateCertificate(c *x509.Certificate) error {
 	if (tomorrow).Before(c.NotBefore) || now.After(c.NotAfter) {
 		return fmt.Errorf("certificate is expired")
 	}
+	// If this certificate is expiring within 6 months, put out a warning
+	if (c.NotAfter).Before(time.Now().AddDate(0, 6, 0)) {
+		logrus.Warn("certificate is expiring within 6 months")
+	}
 	// If we have an RSA key, make sure it's long enough
 	if c.PublicKeyAlgorithm == x509.RSA {
 		rsaKey, ok := c.PublicKey.(*rsa.PublicKey)
