@@ -287,7 +287,7 @@ func parseAllCerts(signedRoot *data.SignedRoot) (map[string]*x509.Certificate, m
 
 func checkCertExpiry(cert *x509.Certificate) error {
 	if time.Now().After(cert.NotAfter) {
-		logrus.Debugf("expired certificate for certificate with  CN %s", cert.Subject.CommonName)
+		logrus.Debugf("certificate with CN %s is expired", cert.Subject.CommonName)
 		return fmt.Errorf("certificate expired: %s", cert.Subject.CommonName)
 	} else if cert.NotAfter.Before(time.Now().AddDate(0, 6, 0)) {
 		logrus.Warnf("certificate with CN %s is near expiry", cert.Subject.CommonName)
