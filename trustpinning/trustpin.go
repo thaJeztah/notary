@@ -46,7 +46,7 @@ func NewTrustPinChecker(trustPinConfig TrustPinConfig, gun string) (CertChecker,
 		// Now only consider certificates that are direct children from this CA cert chain
 		caRootPool := x509.NewCertPool()
 		for _, caCert := range caCerts {
-			if err = trustmanager.ValidateCertificate(caCert); err != nil {
+			if err = trustmanager.ValidateCertificate(caCert, true); err != nil {
 				continue
 			}
 			caRootPool.AddCert(caCert)
