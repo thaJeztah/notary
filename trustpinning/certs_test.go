@@ -888,7 +888,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 }
 
 // TestValidateRootRotationTrustPinningInvalidCA runs a full root certificate rotation but ensures that
-// the specified trust pinning rejectas the new root for not being signed by the specified CA
+// the specified trust pinning rejects the new root for not being signed by the specified CA
 func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
 	gun := "notary-signer"
 	keyAlg := data.RSAKey
@@ -923,9 +923,7 @@ func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
 	testRoot.Signed.Version = 1
 	require.NoError(t, err, "Failed to create new root")
 
-	keyReader, err := os.Open("../fixtures/notary-signer.key")
-	require.NoError(t, err, "could not open key file")
-	pemBytes, err := ioutil.ReadAll(keyReader)
+	pemBytes, err := ioutil.ReadFile("../fixtures/notary-signer.key")
 	require.NoError(t, err, "could not read key file")
 	privKey, err := trustmanager.ParsePEMPrivateKey(pemBytes, "")
 	require.NoError(t, err)
