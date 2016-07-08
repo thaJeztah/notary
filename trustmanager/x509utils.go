@@ -222,7 +222,8 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 }
 
 // ValidateCertificate returns an error if the certificate is not valid for notary
-// Currently this is only ensuring the public key has a large enough modulus if RSA, and an optional time expiry check
+// Currently this is only ensuring the public key has a large enough modulus if RSA,
+// using a non SHA1 signature algorithm, and an optional time expiry check
 func ValidateCertificate(c *x509.Certificate, checkExpiry bool) error {
 	if (c.NotBefore).After(c.NotAfter) {
 		return fmt.Errorf("certificate validity window is invalid")
@@ -238,6 +239,10 @@ func ValidateCertificate(c *x509.Certificate, checkExpiry bool) error {
 		if (c.NotAfter).Before(time.Now().AddDate(0, 6, 0)) {
 			logrus.Warnf("certificate with CN %s is near expiry", c.Subject.CommonName)
 		}
+	}
+	// Can't have SHA1 sig algorithm
+	if c.SignatureAlgorithm == x509.SHA1WithRSA || c.SignatureAlgorithm == x509.DSAWithSHA1 || c.SignatureAlgorithm == x509.ECDSAWithSHA1 {
+		return fmt.Errorf("certificate with CN %s uses invalid SHA1 signature algorithm", c.Subject.CommonName)
 	}
 	// If we have an RSA key, make sure it's long enough
 	if c.PublicKeyAlgorithm == x509.RSA {
