@@ -170,7 +170,7 @@ func (cs *CryptoService) ImportKeysZip(zipReader zip.Reader, retriever notary.Pa
 		}
 		privKey, err := trustmanager.ParsePEMPrivateKey(pemBytes, "")
 		if err != nil {
-			privKey, _, err = trustmanager.GetPasswdDecryptBytes(retriever, pemBytes, "", "imported "+keyInfo.Role)
+			privKey, _, err = trustmanager.GetPasswdDecryptBytes(retriever, pemBytes, "", notary.ImportedKeyPrefix+keyInfo.Role)
 			if err != nil {
 				return err
 			}

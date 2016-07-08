@@ -616,6 +616,6 @@ func TestPassphraseRetrieverDelegationRoleCaching(t *testing.T) {
 	require.Error(t, err)
 
 	// make sure "imported" role fails
-	passphrase, giveup, err = retriever("key", "imported "+data.CanonicalRootRole, false, 0)
+	passphrase, giveup, err = retriever("key", notary.ImportedKeyPrefix+data.CanonicalRootRole, false, 0)
 	require.Error(t, err)
 }

@@ -36,6 +36,8 @@ const (
 	RootKeysSubdir = "root_keys"
 	// NonRootKeysSubdir is the subdirectory under PrivDir where non-root private keys are stored
 	NonRootKeysSubdir = "tuf_keys"
+	// Imported keys are to be prefixed with "imported " so that they don't use passphrase caching
+	ImportedKeyPrefix = "imported "
 
 	// Day is a duration of one day
 	Day  = 24 * time.Hour

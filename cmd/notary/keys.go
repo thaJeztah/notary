@@ -387,7 +387,7 @@ func (k *keyCommander) keysImport(cmd *cobra.Command, args []string) error {
 	// Convert to a data.PrivateKey, potentially decrypting the key
 	privKey, err := trustmanager.ParsePEMPrivateKey(pemBytes, "")
 	if err != nil {
-		privKey, _, err = trustmanager.GetPasswdDecryptBytes(k.getRetriever(), pemBytes, "", "imported "+importRole)
+		privKey, _, err = trustmanager.GetPasswdDecryptBytes(k.getRetriever(), pemBytes, "", notary.ImportedKeyPrefix+importRole)
 		if err != nil {
 			return err
 		}

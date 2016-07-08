@@ -303,7 +303,7 @@ func TestExportRootKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// Convert to a data.PrivateKey, potentially decrypting the key, and add it to the cryptoservice
-	privKey, _, err := trustmanager.GetPasswdDecryptBytes(oldPassphraseRetriever, pemImportBytes, "", "imported "+data.CanonicalRootRole)
+	privKey, _, err := trustmanager.GetPasswdDecryptBytes(oldPassphraseRetriever, pemImportBytes, "", notary.ImportedKeyPrefix+data.CanonicalRootRole)
 	require.NoError(t, err)
 	err = cs2.AddKey(data.CanonicalRootRole, gun, privKey)
 	require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestExportRootKeyReencrypt(t *testing.T) {
 	require.NoError(t, err)
 
 	// Convert to a data.PrivateKey, potentially decrypting the key, and add it to the cryptoservice
-	privKey, _, err := trustmanager.GetPasswdDecryptBytes(newPassphraseRetriever, pemImportBytes, "", "imported "+data.CanonicalRootRole)
+	privKey, _, err := trustmanager.GetPasswdDecryptBytes(newPassphraseRetriever, pemImportBytes, "", notary.ImportedKeyPrefix+data.CanonicalRootRole)
 	require.NoError(t, err)
 	err = cs2.AddKey(data.CanonicalRootRole, gun, privKey)
 	require.NoError(t, err)
@@ -412,7 +412,7 @@ func TestExportNonRootKey(t *testing.T) {
 	require.NoError(t, err, "could not read key file")
 
 	// Convert to a data.PrivateKey, potentially decrypting the key, and add it to the cryptoservice
-	privKey, _, err := trustmanager.GetPasswdDecryptBytes(oldPassphraseRetriever, pemBytes, "", "imported "+data.CanonicalTargetsRole)
+	privKey, _, err := trustmanager.GetPasswdDecryptBytes(oldPassphraseRetriever, pemBytes, "", notary.ImportedKeyPrefix+data.CanonicalTargetsRole)
 	require.NoError(t, err)
 	err = cs2.AddKey(data.CanonicalTargetsRole, gun, privKey)
 	require.NoError(t, err)
@@ -470,7 +470,7 @@ func TestExportNonRootKeyReencrypt(t *testing.T) {
 	require.NoError(t, err, "could not read key file")
 
 	// Convert to a data.PrivateKey, potentially decrypting the key, and add it to the cryptoservice
-	privKey, _, err := trustmanager.GetPasswdDecryptBytes(newPassphraseRetriever, pemBytes, "", "imported "+data.CanonicalSnapshotRole)
+	privKey, _, err := trustmanager.GetPasswdDecryptBytes(newPassphraseRetriever, pemBytes, "", notary.ImportedKeyPrefix+data.CanonicalSnapshotRole)
 	require.NoError(t, err)
 	err = cs2.AddKey(data.CanonicalSnapshotRole, gun, privKey)
 	require.NoError(t, err)
