@@ -768,7 +768,10 @@ func signTargets(updates map[data.RoleName][]byte, repo *tuf.Repo, initialPublis
 // snapshots are supported, if the snapshot metadata fails to load, that's ok.
 // This assumes that bootstrapRepo is only used by Publish() or RotateKey()
 func (r *repository) bootstrapRepo() error {
-	b := tuf.NewRepoBuilder(r.gun, r.GetCryptoService(), r.trustPinning)
+	// we are not going to allow expired metadata by default - fixing expired metadata
+	// should be covered by the witness command:  see
+	// https://github.com/theupdateframework/notary/issues/644
+	b := tuf.NewRepoBuilder(r.gun, r.GetCryptoService(), r.trustPinning, false)
 
 	logrus.Debugf("Loading trusted collection.")
 

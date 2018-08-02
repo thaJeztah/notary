@@ -325,6 +325,11 @@ type TUFLoadOptions struct {
 	Cache                  store.MetadataStore
 	RemoteStore            store.RemoteStore
 	AlwaysCheckInitialized bool
+	// IgnoreExpiry ignores metadata expiry - this causes the client to explicitly
+	// opt out of TUF's freshness guarantees, which may perhaps increase availability
+	// in the case of extremely low connectivity, for instance, and being able to use the
+	// on-disk cache
+	IgnoreExpiry bool
 }
 
 // bootstrapClient attempts to bootstrap a root.json to be used as the trust
@@ -350,10 +355,10 @@ func bootstrapClient(l TUFLoadOptions) (*tufClient, error) {
 	minVersion := 1
 	// the old root on disk should not be validated against any trust pinning configuration
 	// because if we have an old root, it itself is the thing that pins trust
-	oldBuilder := tuf.NewRepoBuilder(l.GUN, l.CryptoService, trustpinning.TrustPinConfig{})
+	oldBuilder := tuf.NewRepoBuilder(l.GUN, l.CryptoService, trustpinning.TrustPinConfig{}, l.IgnoreExpiry)
 
 	// by default, we want to use the trust pinning configuration on any new root that we download
-	newBuilder := tuf.NewRepoBuilder(l.GUN, l.CryptoService, l.TrustPinning)
+	newBuilder := tuf.NewRepoBuilder(l.GUN, l.CryptoService, l.TrustPinning, l.IgnoreExpiry)
 
 	// Try to read root from cache first. We will trust this root until we detect a problem
 	// during update which will cause us to download a new root and perform a rotation.
@@ -367,7 +372,7 @@ func bootstrapClient(l TUFLoadOptions) (*tufClient, error) {
 
 		// again, the root on disk is the source of trust pinning, so use an empty trust
 		// pinning configuration
-		newBuilder = tuf.NewRepoBuilder(l.GUN, l.CryptoService, trustpinning.TrustPinConfig{})
+		newBuilder = tuf.NewRepoBuilder(l.GUN, l.CryptoService, trustpinning.TrustPinConfig{}, l.IgnoreExpiry)
 
 		if err := newBuilder.Load(data.CanonicalRootRole, rootJSON, minVersion, false); err != nil {
 			// Ok, the old root is expired - we want to download a new one.  But we want to use the

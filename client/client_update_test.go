@@ -1997,3 +1997,40 @@ func TestLoadTUFRepoBadURL(t *testing.T) {
 	// value
 	require.EqualError(t, err1, err2.Error())
 }
+
+// TestLoadTUFRepoExpiredMetadata checks that LoadTUFRepo will load metadata
+// that is expired, from either the server or cache, so long as the AllowExpiredMetadata
+// option is enabled.
+func TestLoadTUFRepoExpiredMetadata(t *testing.T) {
+	var gun data.GUN = "docker.com/notary"
+	metadata, serverSwizzler := newServerSwizzler(t)
+	ts := readOnlyServer(t, serverSwizzler.MetadataCache, http.StatusNotFound, gun)
+	defer ts.Close()
+
+	require.NoError(t, serverSwizzler.ExpireMetadata(data.CanonicalTimestampRole))
+	newTimestamp, err := serverSwizzler.MetadataCache.GetSized("timestamp", store.NoSizeLimit)
+	require.NoError(t, err)
+	metadata[data.CanonicalTimestampRole] = newTimestamp
+
+	// offline store, load from cache with expired timestamp
+	repo, _, err := LoadTUFRepo(TUFLoadOptions{
+		GUN:          gun,
+		Cache:        store.NewMemoryStore(metadata),
+		IgnoreExpiry: true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, repo)
+	require.True(t, repo.Timestamp.Signed.Expires.Before(time.Now()))
+
+	httpStore, err := store.NewNotaryServerStore(ts.URL, gun, http.DefaultTransport)
+	require.NoError(t, err)
+	// empty cache, load from server with expired timestamp
+	repo, _, err = LoadTUFRepo(TUFLoadOptions{
+		GUN:          gun,
+		RemoteStore:  httpStore,
+		IgnoreExpiry: true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, repo)
+	require.True(t, repo.Timestamp.Signed.Expires.Before(time.Now()))
+}

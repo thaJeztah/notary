@@ -193,29 +193,34 @@ func applyRootRoleChange(repo *tuf.Repo, c changelist.Change) error {
 	return nil
 }
 
+// TODO: these nearExpiry functions assume that the default notary expiration dates
+// specified in const.go are used (> 6 months for root, targets, delegation, and
+// snapshot).
 func nearExpiry(r data.SignedCommon) bool {
 	plus6mo := time.Now().AddDate(0, 6, 0)
 	return r.Expires.Before(plus6mo)
 }
 
+func warnExpiry(r data.RoleName, sc data.SignedCommon, now time.Time) {
+	if sc.Expires.Before(now) {
+		logrus.Warnf("%s metadata expired at %s- the role metadata should be re-signed", r.String(), sc.Expires)
+		return
+	} else if r != data.CanonicalTimestampRole && nearExpiry(sc) {
+		// ignore timestamp if it's near expiry, since the default expiry is 2 weeks (much < than 6 months
+		// from today) and also the notary server should take care of re-signing
+		logrus.Warnf("%s metadata is nearing expiry - the role metadata should be re-signed", r.String())
+	}
+}
+
 func warnRolesNearExpiry(r *tuf.Repo) {
-	//get every role and its respective signed common and call nearExpiry on it
-	//Root check
-	if nearExpiry(r.Root.Signed.SignedCommon) {
-		logrus.Warn("root is nearing expiry, you should re-sign the role metadata")
-	}
-	//Targets and delegations check
+	now := time.Now()
+	// get every role and its respective signed common and call warnExpiry on it
+	warnExpiry(data.CanonicalRootRole, r.Root.Signed.SignedCommon, now)
 	for role, signedTOrD := range r.Targets {
-		//signedTOrD is of type *data.SignedTargets
-		if nearExpiry(signedTOrD.Signed.SignedCommon) {
-			logrus.Warn(role, " metadata is nearing expiry, you should re-sign the role metadata")
-		}
+		warnExpiry(role, signedTOrD.Signed.SignedCommon, now)
 	}
-	//Snapshot check
-	if nearExpiry(r.Snapshot.Signed.SignedCommon) {
-		logrus.Warn("snapshot is nearing expiry, you should re-sign the role metadata")
-	}
-	//do not need to worry about Timestamp, notary signer will re-sign with the timestamp key
+	warnExpiry(data.CanonicalSnapshotRole, r.Snapshot.Signed.SignedCommon, now)
+	warnExpiry(data.CanonicalTimestampRole, r.Timestamp.Signed.SignedCommon, now)
 }
 
 // Fetches a public key from a remote store, given a gun and role
