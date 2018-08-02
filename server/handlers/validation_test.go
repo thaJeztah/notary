@@ -1276,7 +1276,7 @@ func TestValidateTargetsModifiedHash(t *testing.T) {
 // ### generateSnapshot tests ###
 func TestGenerateSnapshotRootNotLoaded(t *testing.T) {
 	var gun data.GUN = "docker.com/notary"
-	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{}, false)
 	_, err := generateSnapshot(gun, builder, storage.NewMemStorage())
 	require.Error(t, err)
 	require.IsType(t, validation.ErrValidation{}, err)
@@ -1293,7 +1293,7 @@ func TestGenerateSnapshotNoKey(t *testing.T) {
 		require.NoError(t, cs.RemoveKey(keyID))
 	}
 
-	builder := tuf.NewRepoBuilder(gun, cs, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, cs, trustpinning.TrustPinConfig{}, false)
 	// only load root and targets
 	require.NoError(t, builder.Load(data.CanonicalRootRole, metadata[data.CanonicalRootRole], 0, false))
 	require.NoError(t, builder.Load(data.CanonicalTargetsRole, metadata[data.CanonicalTargetsRole], 0, false))
@@ -1312,7 +1312,7 @@ func TestLoadTargetsLoadsNothingIfNoUpdates(t *testing.T) {
 	require.NoError(t, err)
 
 	// load the root into the builder, else we can't load anything else
-	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{}, false)
 	require.NoError(t, builder.Load(data.CanonicalRootRole, metadata[data.CanonicalRootRole], 0, false))
 
 	store := storage.NewMemStorage()
@@ -1340,7 +1340,7 @@ func TestValidateTargetsRequiresStoredParent(t *testing.T) {
 	require.NoError(t, err)
 
 	// load the root into the builder, else we can't load anything else
-	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{}, false)
 	require.NoError(t, builder.Load(data.CanonicalRootRole, metadata[data.CanonicalRootRole], 0, false))
 
 	delUpdate := storage.MetaUpdate{
@@ -1384,7 +1384,7 @@ func TestValidateTargetsParentInUpdate(t *testing.T) {
 	store := storage.NewMemStorage()
 
 	// load the root into the builder, else we can't load anything else
-	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{}, false)
 	require.NoError(t, builder.Load(data.CanonicalRootRole, metadata[data.CanonicalRootRole], 0, false))
 
 	targetsUpdate := storage.MetaUpdate{
@@ -1431,7 +1431,7 @@ func TestValidateTargetsRoleNotInParent(t *testing.T) {
 	require.NoError(t, err)
 
 	// load the root into the builder, else we can't load anything else
-	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, nil, trustpinning.TrustPinConfig{}, false)
 	require.NoError(t, builder.Load(data.CanonicalRootRole, meta[data.CanonicalRootRole], 0, false))
 
 	// prepare the original targets file, without a delegation role, as an update

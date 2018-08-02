@@ -97,13 +97,13 @@ func (f finishedBuilder) GetConsistentInfo(roleName data.RoleName) ConsistentInf
 }
 
 // NewRepoBuilder is the only way to get a pre-built RepoBuilder
-func NewRepoBuilder(gun data.GUN, cs signed.CryptoService, trustpin trustpinning.TrustPinConfig) RepoBuilder {
-	return NewBuilderFromRepo(gun, NewRepo(cs), trustpin)
+func NewRepoBuilder(gun data.GUN, cs signed.CryptoService, trustpin trustpinning.TrustPinConfig, allowExpired bool) RepoBuilder {
+	return NewBuilderFromRepo(gun, NewRepo(cs), trustpin, allowExpired)
 }
 
 // NewBuilderFromRepo allows us to bootstrap a builder given existing repo data.
 // YOU PROBABLY SHOULDN'T BE USING THIS OUTSIDE OF TESTING CODE!!!
-func NewBuilderFromRepo(gun data.GUN, repo *Repo, trustpin trustpinning.TrustPinConfig) RepoBuilder {
+func NewBuilderFromRepo(gun data.GUN, repo *Repo, trustpin trustpinning.TrustPinConfig, allowExpired bool) RepoBuilder {
 	return &repoBuilderWrapper{
 		RepoBuilder: &repoBuilder{
 			repo:                 repo,
@@ -111,6 +111,7 @@ func NewBuilderFromRepo(gun data.GUN, repo *Repo, trustpin trustpinning.TrustPin
 			gun:                  gun,
 			trustpin:             trustpin,
 			loadedNotChecksummed: make(map[data.RoleName][]byte),
+			allowExpiredMetadata: allowExpired,
 		},
 	}
 }
@@ -152,6 +153,11 @@ type repoBuilder struct {
 
 	// for bootstrapping the next builder
 	nextRootChecksum *data.FileMeta
+
+	// allowExpiredMetadata overrides all allowExpired settings on Load methods - this means
+	// the builder will not check the expiry on any metadata, even if load method
+	// calls allowExpired=false
+	allowExpiredMetadata bool
 }
 
 func (rb *repoBuilder) Finish() (*Repo, *Repo, error) {
@@ -448,7 +454,10 @@ func (rb *repoBuilder) loadRoot(content []byte, minVersion int, allowExpired, sk
 		return err
 	}
 
-	if !allowExpired { // check must go at the end because all other validation should pass
+	// check must go at the end because all other validation should pass.  Check both the global
+	// builder setting as to whether all metadata should be allowed to be expired as well as
+	// the method setting.  If either one allows expired metadata, don't perform this check.
+	if !allowExpired && !rb.allowExpiredMetadata {
 		if err := signed.VerifyExpiry(&(signedRoot.Signed.SignedCommon), roleName); err != nil {
 			return err
 		}
@@ -485,7 +494,10 @@ func (rb *repoBuilder) loadTimestamp(content []byte, minVersion int, allowExpire
 		return err
 	}
 
-	if !allowExpired { // check must go at the end because all other validation should pass
+	// check must go at the end because all other validation should pass.  Check both the global
+	// builder setting as to whether all metadata should be allowed to be expired as well as
+	// the method setting.  If either one allows expired metadata, don't perform this check.
+	if !allowExpired && !rb.allowExpiredMetadata {
 		if err := signed.VerifyExpiry(&(signedTimestamp.Signed.SignedCommon), roleName); err != nil {
 			return err
 		}
@@ -521,7 +533,10 @@ func (rb *repoBuilder) loadSnapshot(content []byte, minVersion int, allowExpired
 		return err
 	}
 
-	if !allowExpired { // check must go at the end because all other validation should pass
+	// check must go at the end because all other validation should pass.  Check both the global
+	// builder setting as to whether all metadata should be allowed to be expired as well as
+	// the method setting.  If either one allows expired metadata, don't perform this check.
+	if !allowExpired && !rb.allowExpiredMetadata {
 		if err := signed.VerifyExpiry(&(signedSnapshot.Signed.SignedCommon), roleName); err != nil {
 			return err
 		}
@@ -564,7 +579,10 @@ func (rb *repoBuilder) loadTargets(content []byte, minVersion int, allowExpired 
 		return err
 	}
 
-	if !allowExpired { // check must go at the end because all other validation should pass
+	// check must go at the end because all other validation should pass.  Check both the global
+	// builder setting as to whether all metadata should be allowed to be expired as well as
+	// the method setting.  If either one allows expired metadata, don't perform this check.
+	if !allowExpired && !rb.allowExpiredMetadata {
 		if err := signed.VerifyExpiry(&(signedTargets.Signed.SignedCommon), roleName); err != nil {
 			return err
 		}
@@ -603,7 +621,10 @@ func (rb *repoBuilder) loadDelegation(roleName data.RoleName, content []byte, mi
 		return err
 	}
 
-	if !allowExpired { // check must go at the end because all other validation should pass
+	// check must go at the end because all other validation should pass.  Check both the global
+	// builder setting as to whether all metadata should be allowed to be expired as well as
+	// the method setting.  If either one allows expired metadata, don't perform this check.
+	if !allowExpired && !rb.allowExpiredMetadata {
 		if err := signed.VerifyExpiry(&(signedTargets.Signed.SignedCommon), roleName); err != nil {
 			rb.invalidRoles.Targets[roleName] = signedTargets
 			return err

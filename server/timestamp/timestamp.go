@@ -152,7 +152,7 @@ func snapshotExpired(ts *data.SignedTimestamp, snapshot []byte) bool {
 func createTimestamp(gun data.GUN, prev *data.SignedTimestamp, snapshot []byte, store storage.MetaStore,
 	cryptoService signed.CryptoService) (*storage.MetaUpdate, error) {
 
-	builder := tuf.NewRepoBuilder(gun, cryptoService, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, cryptoService, trustpinning.TrustPinConfig{}, false)
 
 	// load the current root to ensure we use the correct timestamp key.
 	_, root, err := store.GetCurrent(gun, data.CanonicalRootRole)

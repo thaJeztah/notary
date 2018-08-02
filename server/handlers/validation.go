@@ -34,7 +34,7 @@ func validateUpdate(cs signed.CryptoService, gun data.GUN, updates []storage.Met
 		roles[v.Role] = v
 	}
 
-	builder := tuf.NewRepoBuilder(gun, cs, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, cs, trustpinning.TrustPinConfig{}, false)
 	if err := loadFromStore(gun, data.CanonicalRootRole, builder, store); err != nil {
 		if _, ok := err.(storage.ErrNotFound); !ok {
 			return nil, err

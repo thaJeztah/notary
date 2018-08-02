@@ -84,7 +84,7 @@ func GetOrCreateSnapshot(gun data.GUN, checksum string, store storage.MetaStore,
 		return lastModified, currentJSON, nil
 	}
 
-	builder := tuf.NewRepoBuilder(gun, cryptoService, trustpinning.TrustPinConfig{})
+	builder := tuf.NewRepoBuilder(gun, cryptoService, trustpinning.TrustPinConfig{}, false)
 
 	// load the current root to ensure we use the correct snapshot key.
 	_, rootJSON, err := store.GetCurrent(gun, data.CanonicalRootRole)
