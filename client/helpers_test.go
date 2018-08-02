@@ -979,12 +979,14 @@ func TestAllNearExpiry(t *testing.T) {
 	repo, _, err := testutils.EmptyRepo("docker.com/notary")
 	require.NoError(t, err)
 	nearexpdate := time.Now().AddDate(0, 1, 0)
+	expireddate := time.Now().AddDate(-1, -1, 0)
 	repo.Root.Signed.SignedCommon.Expires = nearexpdate
-	repo.Snapshot.Signed.SignedCommon.Expires = nearexpdate
-	repo.Targets["targets"].Signed.Expires = nearexpdate
+	repo.Snapshot.Signed.SignedCommon.Expires = time.Now().AddDate(0, 0, 1)
+	repo.Targets["targets"].Signed.Expires = expireddate
 	_, err1 := repo.InitTargets("targets/exp")
 	require.NoError(t, err1)
 	repo.Targets["targets/exp"].Signed.Expires = nearexpdate
+	repo.Timestamp.Signed.Expires = expireddate
 	//Reset levels to display warnings through logrus
 	orgLevel := log.GetLevel()
 	log.SetLevel(log.WarnLevel)
@@ -992,11 +994,11 @@ func TestAllNearExpiry(t *testing.T) {
 	b := bytes.NewBuffer(nil)
 	log.SetOutput(b)
 	warnRolesNearExpiry(repo)
-	require.Contains(t, b.String(), "targets metadata is nearing expiry, you should re-sign the role metadata", "targets should show near expiry")
-	require.Contains(t, b.String(), "targets/exp metadata is nearing expiry, you should re-sign the role metadata", "targets/exp should show near expiry")
-	require.Contains(t, b.String(), "root is nearing expiry, you should re-sign the role metadata", "Root should show near expiry")
-	require.Contains(t, b.String(), "snapshot is nearing expiry, you should re-sign the role metadata", "Snapshot should show near expiry")
-	require.NotContains(t, b.String(), "timestamp", "there should be no logrus warnings pertaining to timestamp")
+	require.Contains(t, b.String(), "targets metadata expired at", "targets should show already expired")
+	require.Contains(t, b.String(), "targets/exp metadata is nearing expiry", "targets/exp should show near expiry")
+	require.Contains(t, b.String(), "root metadata is nearing expiry", "Root should show near expiry")
+	require.Contains(t, b.String(), "snapshot metadata is nearing expiry", "Snapshot should show near expiry")
+	require.Contains(t, b.String(), "timestamp metadata expired at", "timestamp should show already expired")
 }
 
 func TestAllNotNearExpiry(t *testing.T) {
@@ -1009,6 +1011,8 @@ func TestAllNotNearExpiry(t *testing.T) {
 	_, err1 := repo.InitTargets("targets/noexp")
 	require.NoError(t, err1)
 	repo.Targets["targets/noexp"].Signed.Expires = notnearexpdate
+	// generate a near expiry date, to show that unless a timestamp is expired, nothing is warned
+	repo.Timestamp.Signed.Expires = time.Now().AddDate(0, 0, 1)
 	//Reset levels to display warnings through logrus
 	orgLevel := log.GetLevel()
 	log.SetLevel(log.WarnLevel)
@@ -1016,10 +1020,10 @@ func TestAllNotNearExpiry(t *testing.T) {
 	a := bytes.NewBuffer(nil)
 	log.SetOutput(a)
 	warnRolesNearExpiry(repo)
-	require.NotContains(t, a.String(), "targets metadata is nearing expiry, you should re-sign the role metadata", "targets should not show near expiry")
-	require.NotContains(t, a.String(), "targets/noexp metadata is nearing expiry, you should re-sign the role metadata", "targets/noexp should not show near expiry")
-	require.NotContains(t, a.String(), "root is nearing expiry, you should re-sign the role metadata", "Root should not show near expiry")
-	require.NotContains(t, a.String(), "snapshot is nearing expiry, you should re-sign the role metadata", "Snapshot should not show near expiry")
+	require.NotContains(t, a.String(), "targets metadata is nearing expiry", "targets should not show near expiry")
+	require.NotContains(t, a.String(), "targets/noexp metadata is nearing expiry", "targets/noexp should not show near expiry")
+	require.NotContains(t, a.String(), "root metadata is nearing expiry", "Root should not show near expiry")
+	require.NotContains(t, a.String(), "snapshot metadata is nearing expiry", "Snapshot should not show near expiry")
 	require.NotContains(t, a.String(), "timestamp", "there should be no logrus warnings pertaining to timestamp")
 }
 
