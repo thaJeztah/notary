@@ -176,13 +176,13 @@ static: ${PREFIX}/bin/static/notary-server ${PREFIX}/bin/static/notary-signer ${
 	@echo "+ $@"
 
 notary-dockerfile:
-	@docker build --force-rm -t notary .
+	@docker build --force-rm --build-arg=GO_VERSION -t notary .
 
 server-dockerfile:
-	@docker build --force-rm -f server.Dockerfile -t notary-server .
+	@docker build --force-rm --build-arg=GO_VERSION -f server.Dockerfile -t notary-server .
 
 signer-dockerfile:
-	@docker build --force-rm -f signer.Dockerfile -t notary-signer .
+	@docker build --force-rm --build-arg=GO_VERSION -f signer.Dockerfile -t notary-signer .
 
 docker-images: notary-dockerfile server-dockerfile signer-dockerfile
 
@@ -191,7 +191,7 @@ shell: notary-dockerfile
 
 cross:
 	@rm -rf $(CURDIR)/cross
-	@docker build --force-rm -t notary -f cross.Dockerfile .
+	@docker build --force-rm --build-arg=GO_VERSION -t notary -f cross.Dockerfile .
 	docker run --rm -v $(CURDIR)/cross:$(NOTARYDIR)/cross -e CTIMEVAR="${CTIMEVAR}" -e NOTARY_BUILDTAGS=$(NOTARY_BUILDTAGS) notary buildscripts/cross.sh $(GOOSES)
 
 clean:

@@ -1,4 +1,6 @@
-FROM golang:1.12.8
+ARG GO_VERSION=1.12.8
+
+FROM golang:${GO_VERSION}
 
 RUN apt-get update && apt-get install -y \
 	curl \
