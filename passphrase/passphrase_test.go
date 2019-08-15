@@ -34,7 +34,7 @@ func TestGetPassphraseForUsingDelegationKey(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	for i := 0; i < 3; i++ {
 		target := fmt.Sprintf("targets/level%d", i)
@@ -49,7 +49,7 @@ func TestGetPassphraseLimitsShortPassphrases(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	repeatedShortPass := strings.Repeat("a\n", 22)
 	_, err := in.WriteString(repeatedShortPass)
@@ -65,7 +65,7 @@ func TestGetPassphraseLimitsMismatchingPassphrases(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	repeatedShortPass := strings.Repeat("password\nmismatchingpass\n", 11)
 	_, err := in.WriteString(repeatedShortPass)
@@ -81,7 +81,7 @@ func TestGetPassphraseForCreatingDelegationKey(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	_, err := in.WriteString("passphrase\npassphrase\n")
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestGetPassphraseDefaultValidation(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	_, err := in.WriteString("1234\n1234\n")
 	require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestRolePromptingAndCaching(t *testing.T) {
 	var in bytes.Buffer
 	var out bytes.Buffer
 
-	retriever := PromptRetrieverWithInOut(&in, &out, nil, nil)
+	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
 	assertAskOnceForKey(t, &in, &out, retriever, "rootpassword", data.CanonicalRootRole.String())
 	assertAskOnceForKey(t, &in, &out, retriever, "targetspassword", data.CanonicalTargetsRole.String())

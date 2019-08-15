@@ -58,14 +58,14 @@ func PromptRetriever() notary.PassRetriever {
 			return "", false, ErrNoInput
 		}
 	}
-	return PromptRetrieverWithInOut(os.Stdin, os.Stdout, nil, defaultPassValidator)
+	return PromptRetrieverWithInOut(os.Stdin, os.Stdout, nil)
 }
 
 type boundRetriever struct {
 	in              io.Reader
 	out             io.Writer
 	aliasMap        map[string]string
-	validateFunc    notary.PassValidator
+	validators      []notary.PassValidator
 	passphraseCache map[string]string
 }
 
@@ -148,12 +148,11 @@ func (br *boundRetriever) requestPassphrase(keyName, alias string, createNew boo
 }
 
 func (br *boundRetriever) verifyAndConfirmPassword(stdin *bufio.Reader, retPass, displayAlias, withID string) error {
-	if retPass == "" {
-		return ErrEmpty
-	}
-	if err := br.validateFunc(retPass); err != nil {
-		fmt.Fprintf(br.out, "Passphrase is invalid: %s\n", err)
-		return err
+	for _, v := range br.validators {
+		if err := v(retPass); err != nil {
+			_, _ = fmt.Fprintf(br.out, "Passphrase is invalid: %s\n", err)
+			return err
+		}
 	}
 
 	fmt.Fprintf(br.out, "Repeat passphrase for new %s key%s: ", displayAlias, withID)
@@ -176,6 +175,13 @@ func (br *boundRetriever) cachePassword(alias, retPass string) {
 	br.passphraseCache[alias] = retPass
 }
 
+func notEmptyPassValidator(passphrase string) error {
+	if passphrase == "" {
+		return ErrEmpty
+	}
+	return nil
+}
+
 func defaultPassValidator(passphrase string) error {
 	if len(passphrase) < 8 {
 		return ErrTooShort
@@ -188,19 +194,18 @@ func defaultPassValidator(passphrase string) error {
 // such that subsequent prompts will produce the same passphrase.
 // aliasMap can be used to specify display names for TUF key aliases. If aliasMap
 // is nil, a sensible default will be used.
-func PromptRetrieverWithInOut(in io.Reader, out io.Writer, aliasMap map[string]string, validator notary.PassValidator) notary.PassRetriever {
-	if validator == nil {
-		validator = defaultPassValidator
-	}
-
+func PromptRetrieverWithInOut(in io.Reader, out io.Writer, aliasMap map[string]string, validators ...notary.PassValidator) notary.PassRetriever {
 	bound := &boundRetriever{
 		in:              in,
 		out:             out,
 		aliasMap:        aliasMap,
-		validateFunc:    validator,
+		validators:      []notary.PassValidator{notEmptyPassValidator},
 		passphraseCache: make(map[string]string),
 	}
 
+	if len(validators) == 0 {
+		bound.validators = append(bound.validators, defaultPassValidator)
+	}
 	return bound.getPassphrase
 }
 
